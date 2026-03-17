@@ -1,0 +1,86 @@
+{
+  "_version": "1.45.0",
+  "sap.app": {
+    "id": "my.app",
+    "type": "application",
+    "title": "WorkForce Portal – Employee & Manager Service System",
+    "applicationVersion": {
+      "version": "1.0.0"
+    }
+  },
+  "sap.ui": {
+    "technology": "UI5",
+    "deviceTypes": {
+      "desktop": true,
+      "tablet": true,
+      "phone": true
+    }
+  },
+  "sap.ui5": {
+    "rootView": {
+      "viewName": "my.app.view.App",
+      "type": "XML",
+      "async": true,
+      "id": "appRootView"
+    },
+    "dependencies": {
+      "minUI5Version": "1.96.0",
+      "libs": {
+        "sap.m": {},
+        "sap.ui.layout": {}
+      }
+    },
+    "resources": {
+      "css": [
+        {
+          "uri": "css/style.css"
+        }
+      ]
+    },
+    "contentDensities": {
+      "compact": true,
+      "cozy": true
+    },
+    "routing": {
+      "config": {
+        "routerClass": "sap.m.routing.Router",
+        "viewType": "XML",
+        "viewPath": "my.app.view",
+        "controlId": "idMainApp",
+        "controlAggregation": "pages",
+        "async": true
+      },
+      "routes": [
+        {
+          "name": "Login",
+          "pattern": "",
+          "target": "Login"
+        },
+        {
+          "name": "Main",
+          "pattern": "main",
+          "target": "Main"
+        },
+        {
+          "name": "MyProfile",
+          "pattern": "profile",
+          "target": "MyProfile"
+        }
+      ],
+      "targets": {
+        "Login": {
+          "viewName": "Login",
+          "viewLevel": 1
+        },
+        "Main": {
+          "viewName": "Main",
+          "viewLevel": 2
+        },
+        "MyProfile": {
+          "viewName": "MyProfile",
+          "viewLevel": 3
+        }
+      }
+    }
+  }
+}

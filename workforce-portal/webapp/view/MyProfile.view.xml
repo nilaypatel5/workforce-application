@@ -1,0 +1,63 @@
+<mvc:View
+  controllerName="my.app.controller.MyProfile"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:f="sap.ui.layout.form">
+
+  <Page title="My Profile" class="sapUiContentPadding">
+
+    <content>
+
+      <!-- Header Section -->
+      <VBox
+        alignItems="Center"
+        class="sapUiSmallMarginBottom">
+
+        <Avatar
+          displaySize="L"
+          initials="{= ${profileModel>/firstName}.charAt(0) + ${profileModel>/lastName}.charAt(0) }" />
+
+        <Title
+          text="{profileModel>/firstName} {profileModel>/lastName}"
+          level="H3" />
+
+        <Text text="{profileModel>/email}" />
+      </VBox>
+
+      <!-- Profile Info Panel -->
+      <Panel
+        headerText="Employee Information"
+        class="sapUiResponsiveMargin sapUiMediumMarginTop">
+
+        <f:SimpleForm
+          editable="false"
+          labelSpanXL="3"
+          labelSpanL="3"
+          labelSpanM="4"
+          emptySpanXL="4"
+          emptySpanL="4"
+          columnsXL="2">
+
+          <Label text="First Name" />
+          <Text text="{profileModel>/firstName}" />
+
+          <Label text="Last Name" />
+          <Text text="{profileModel>/lastName}" />
+
+          <Label text="Email" />
+          <Text text="{profileModel>/email}" />
+
+          <Label text="Phone" />
+          <Text text="{= ${profileModel>/phone} || 'Not maintained' }" />
+
+          <Label text="Department" />
+          <Text text="{profileModel>/department}" />
+
+        </f:SimpleForm>
+
+      </Panel>
+
+    </content>
+
+  </Page>
+</mvc:View>

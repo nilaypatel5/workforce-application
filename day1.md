@@ -1,4 +1,5 @@
 # Day 1 — Quick Notes (Backend API + SSMS)
+**Date:** 16-03-2026
 
 ## Database Work (SSMS)
 - Created a database: **EmployeeAuth**

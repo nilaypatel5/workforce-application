@@ -1,0 +1,12 @@
+{
+  "name": "workforce-portal",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "ui5 serve -o /index.html"
+  },
+  "devDependencies": {
+    "@ui5/cli": "^3.11.0",
+    "ui5-middleware-simpleproxy": "^3.3.1"
+  }
+}

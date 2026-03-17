@@ -1,0 +1,30 @@
+<mvc:View
+  controllerName="my.app.controller.Main"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m">
+  <Page title="WorkForce Portal" class="sapUiContentPadding">
+    <content>
+      <VBox width="100%" class="pageMaxWidth sapUiMediumMarginTop">
+        <Panel class="sapUiResponsivePadding--content" backgroundDesign="Solid">
+          <headerToolbar>
+            <Toolbar>
+              <Title text="WorkForce Portal" level="H2" />
+              <ToolbarSpacer />
+              <Button text="My Profile" icon="sap-icon://employee" press="onMyProfilePress" />
+              <Button text="Refresh" icon="sap-icon://refresh" press="onRefreshButtonPress" />
+              <Button text="Logout" type="Reject" icon="sap-icon://log" press="onLogoutButtonPress" />
+            </Toolbar>
+          </headerToolbar>
+
+          <content>
+            <VBox>
+              <ObjectStatus text="Session active" state="Success" class="sapUiSmallMarginBottom" />
+              <Text id="idLoggedInAsLoadingUserText" text="Logged in as: (loading...)" />
+            </VBox>
+          </content>
+        </Panel>
+      </VBox>
+    </content>
+  </Page>
+</mvc:View>
+

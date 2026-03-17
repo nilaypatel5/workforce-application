@@ -1,0 +1,62 @@
+<mvc:View
+  controllerName="my.app.controller.Login"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:f="sap.ui.layout.form">
+  <Page title="WorkForce Portal" class="loginPage">
+    <content>
+      <VBox class="loginShell sapUiLargeMarginTop sapUiLargeMarginBottom" alignItems="Center" justifyContent="Center">
+        <Panel class="loginCard sapUiResponsivePadding--content">
+          <headerToolbar>
+            <Toolbar>
+              <Title text="WorkForce Portal" level="H2" />
+              <ToolbarSpacer />
+              <ObjectStatus text="Secure sign-in" state="Success" />
+            </Toolbar>
+          </headerToolbar>
+
+          <content>
+            <VBox class="sapUiSmallMarginTop">
+              <HBox justifyContent="Center" class="sapUiSmallMarginBottom">
+                <Avatar displaySize="L" fallbackIcon="sap-icon://employee" />
+              </HBox>
+
+              <f:SimpleForm editable="true">
+                <f:content>
+                  <Label text="Username" />
+                  <Input
+                    id="idUsernameInput"
+                    placeholder="Enter your username"
+                    submit="onInputLoginSubmit"
+                  />
+
+                  <Label text="Password" />
+                  <Input
+                    id="idPasswordInput"
+                    type="Password"
+                    placeholder="Enter your password"
+                    submit="onInputLoginSubmit"
+                  />
+                </f:content>
+              </f:SimpleForm>
+
+              <Button
+                text="Sign in"
+                type="Emphasized"
+                icon="sap-icon://log"
+                class="sapUiSmallMarginTop"
+                press="onSignInButtonPress"
+              />
+
+              <Text
+                class="sapUiSmallMarginTop sapUiTinyMarginBottom"
+                text="Tip: Make sure the backend is running."
+              />
+            </VBox>
+          </content>
+        </Panel>
+      </VBox>
+    </content>
+  </Page>
+</mvc:View>
+

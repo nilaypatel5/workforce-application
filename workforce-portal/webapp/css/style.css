@@ -1,0 +1,18 @@
+.loginPage {
+  background: linear-gradient(135deg, rgba(10, 110, 209, 0.06), rgba(92, 186, 230, 0.04));
+}
+
+.loginShell {
+  min-height: calc(100vh - 3rem);
+}
+
+.loginCard {
+  width: 100%;
+  max-width: 420px;
+}
+
+.pageMaxWidth {
+  max-width: 960px;
+  margin-left: auto;
+  margin-right: auto;
+}
