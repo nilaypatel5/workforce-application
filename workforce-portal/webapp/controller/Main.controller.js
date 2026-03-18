@@ -46,8 +46,12 @@ sap.ui.define(
         }
       },
 
-      onMyProfilePress: function () {
+      onMyProfileButtonPress: function () {
         this.getOwnerComponent().getRouter().navTo("MyProfile");
+      },
+
+      onMyLeavesButtonPress: function () {
+        this.getOwnerComponent().getRouter().navTo("MyLeaves");
       },
 
       onLogoutButtonPress: function () {

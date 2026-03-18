@@ -1,0 +1,74 @@
+<mvc:View
+  controllerName="my.app.controller.MyLeaves"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m">
+
+  <Page title="My Leaves" class="sapUiContentPadding">
+    <headerContent>
+      <Button
+        text="Request Leave"
+        icon="sap-icon://add"
+        type="Emphasized"
+        press="onRequestLeaveButtonPress" />
+    </headerContent>
+
+    <content>
+      <VBox class="sapUiSmallMarginTop">
+        <Table
+          id="idItemsLeavesTable"
+          items="{
+            path: 'leavesModel>/items'
+          }">
+          <headerToolbar>
+            <Toolbar>
+              <Title text="My Leave Requests" level="H3" />
+              <ToolbarSpacer />
+              <Button
+                text="Refresh"
+                icon="sap-icon://refresh"
+                press="onRefreshButtonPress" />
+            </Toolbar>
+          </headerToolbar>
+
+          <columns>
+            <Column>
+              <Text text="Start Date" />
+            </Column>
+            <Column>
+              <Text text="End Date" />
+            </Column>
+            <Column>
+              <Text text="Type" />
+            </Column>
+            <Column demandPopin="true" minScreenWidth="Tablet">
+              <Text text="Status" />
+            </Column>
+            <Column demandPopin="true" minScreenWidth="Tablet">
+              <Text text="Reason" />
+            </Column>
+          </columns>
+
+          <items>
+            <ColumnListItem>
+              <cells>
+                <Text text="{leavesModel>startDate}" />
+                <Text text="{leavesModel>endDate}" />
+                <Text text="{leavesModel>type}" />
+                <ObjectStatus
+                  text="{leavesModel>status}"
+                  state="{
+                    path: 'leavesModel>status',
+                    formatter: '.formatStatusState'
+                  }" />
+                <Text
+                  text="{= ${leavesModel>reason} || '—' }"
+                  maxLines="2" />
+              </cells>
+            </ColumnListItem>
+          </items>
+        </Table>
+      </VBox>
+    </content>
+  </Page>
+</mvc:View>
+

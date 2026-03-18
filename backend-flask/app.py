@@ -1,6 +1,7 @@
 from functools import wraps
 
 import os
+from datetime import datetime
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from jose import jwt, JWTError
@@ -13,6 +14,8 @@ from models import (
     UserORM,
     EmployeeORM,
     EmployeeProfile,
+    LeaveRequestORM,
+    LeaveRequest,
     engine,
 )
 
@@ -35,7 +38,9 @@ def db_health():
     try:
         with engine.connect() as conn:
             result = conn.execute(text("SELECT 1")).fetchone()
-        return jsonify({"status": "ok", "db": "connected", "result": list(result) if result else None})
+        return jsonify(
+            {"status": "ok", "db": "connected", "result": list(result) if result else None}
+        )
     except Exception:
         return jsonify({"status": "error", "db": "unreachable"}), 503
 
@@ -103,10 +108,14 @@ def who_am_i(username):
 @app.route("/ess/profile", methods=["GET"])
 @token_required
 def my_profile(username):
-    username = (username or "").strip().lower()  # ✅ FIX ADDED
+    username = (username or "").strip().lower()
 
     with SessionLocal() as session:
-        user = session.query(UserORM).filter(UserORM.Username.ilike(username)).one_or_none()  # ✅ FIXED
+        user = (
+            session.query(UserORM)
+            .filter(UserORM.Username.ilike(username))
+            .one_or_none()
+        )
         if user is None:
             return jsonify({"detail": "User not found"}), 404
 
@@ -135,6 +144,148 @@ def my_profile(username):
                 "department": profile.department,
             }
         )
+
+
+@app.route("/ess/leaves", methods=["GET"])
+@token_required
+def my_leaves(username):
+    username = (username or "").strip().lower()
+
+    with SessionLocal() as session:
+        user = (
+            session.query(UserORM)
+            .filter(UserORM.Username.ilike(username))
+            .one_or_none()
+        )
+        if user is None:
+            return jsonify({"detail": "User not found"}), 404
+
+        employee = (
+            session.query(EmployeeORM)
+            .filter(EmployeeORM.UserId == user.Id)
+            .one_or_none()
+        )
+        if employee is None:
+            return jsonify({"detail": "Employee profile not found"}), 404
+
+        leave_rows = (
+            session.query(LeaveRequestORM)
+            .filter(LeaveRequestORM.EmployeeId == employee.Id)
+            .order_by(LeaveRequestORM.StartDate.desc(), LeaveRequestORM.Id.desc())
+            .all()
+        )
+
+        leaves: list[LeaveRequest] = []
+        for row in leave_rows:
+            leaves.append(
+                LeaveRequest(
+                    id=row.Id,
+                    start_date=row.StartDate.isoformat() if row.StartDate else "",
+                    end_date=row.EndDate.isoformat() if row.EndDate else "",
+                    type=row.Type,
+                    status=row.Status,
+                    reason=row.Reason,
+                )
+            )
+
+        return jsonify(
+            [
+                {
+                    "id": leave.id,
+                    "startDate": leave.start_date,
+                    "endDate": leave.end_date,
+                    "type": leave.type,
+                    "status": leave.status,
+                    "reason": leave.reason,
+                }
+                for leave in leaves
+            ]
+        )
+
+
+@app.route("/ess/leaves", methods=["POST"])
+@token_required
+def create_leave(username):
+    username = (username or "").strip().lower()
+    body = request.get_json(silent=True) or {}
+
+    raw_start = (body.get("startDate") or "").strip()
+    raw_end = (body.get("endDate") or "").strip()
+    leave_type = (body.get("type") or "").strip()
+    reason = (body.get("reason") or "").strip() or None
+
+    if not raw_start or not raw_end or not leave_type:
+        return (
+            jsonify(
+                {
+                    "detail": "startDate, endDate and type are required",
+                }
+            ),
+            400,
+        )
+
+    try:
+        start_date = datetime.fromisoformat(raw_start).date()
+        end_date = datetime.fromisoformat(raw_end).date()
+    except ValueError:
+        return (
+            jsonify(
+                {
+                    "detail": "startDate and endDate must be valid ISO dates (YYYY-MM-DD)",
+                }
+            ),
+            400,
+        )
+
+    if end_date < start_date:
+        return (
+            jsonify(
+                {
+                    "detail": "endDate cannot be before startDate",
+                }
+            ),
+            400,
+        )
+
+    with SessionLocal() as session:
+        user = (
+            session.query(UserORM)
+            .filter(UserORM.Username.ilike(username))
+            .one_or_none()
+        )
+        if user is None:
+            return jsonify({"detail": "User not found"}), 404
+
+        employee = (
+            session.query(EmployeeORM)
+            .filter(EmployeeORM.UserId == user.Id)
+            .one_or_none()
+        )
+        if employee is None:
+            return jsonify({"detail": "Employee profile not found"}), 404
+
+        new_leave = LeaveRequestORM(
+            EmployeeId=employee.Id,
+            StartDate=start_date,
+            EndDate=end_date,
+            Type=leave_type,
+            Status="Pending",
+            Reason=reason,
+        )
+        session.add(new_leave)
+        session.commit()
+        session.refresh(new_leave)
+
+        response = {
+            "id": new_leave.Id,
+            "startDate": new_leave.StartDate.isoformat() if new_leave.StartDate else "",
+            "endDate": new_leave.EndDate.isoformat() if new_leave.EndDate else "",
+            "type": new_leave.Type,
+            "status": new_leave.Status,
+            "reason": new_leave.Reason,
+        }
+
+        return jsonify(response), 201
 
 
 if __name__ == "__main__":

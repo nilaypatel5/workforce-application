@@ -65,6 +65,11 @@
           "name": "MyProfile",
           "pattern": "profile",
           "target": "MyProfile"
+        },
+        {
+          "name": "MyLeaves",
+          "pattern": "leaves",
+          "target": "MyLeaves"
         }
       ],
       "targets": {
@@ -79,6 +84,10 @@
         "MyProfile": {
           "viewName": "MyProfile",
           "viewLevel": 3
+        },
+        "MyLeaves": {
+          "viewName": "MyLeaves",
+          "viewLevel": 4
         }
       }
     }

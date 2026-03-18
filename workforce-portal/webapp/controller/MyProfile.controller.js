@@ -9,10 +9,10 @@ sap.ui.define(
 
     return Controller.extend("my.app.controller.MyProfile", {
       onInit: function () {
-        this._loadProfile();
+        this.loadProfile();
       },
 
-      _loadProfile: async function () {
+      loadProfile: async function () {
         const token = localStorage.getItem("authToken");
         if (!token) {
           console.warn("No auth token found, redirecting to login");

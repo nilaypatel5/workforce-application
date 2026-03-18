@@ -10,7 +10,8 @@
             <Toolbar>
               <Title text="WorkForce Portal" level="H2" />
               <ToolbarSpacer />
-              <Button text="My Profile" icon="sap-icon://employee" press="onMyProfilePress" />
+              <Button text="My Profile" icon="sap-icon://employee" press="onMyProfileButtonPress" />
+              <Button text="My Leaves" icon="sap-icon://calendar" press="onMyLeavesButtonPress" />
               <Button text="Refresh" icon="sap-icon://refresh" press="onRefreshButtonPress" />
               <Button text="Logout" type="Reject" icon="sap-icon://log" press="onLogoutButtonPress" />
             </Toolbar>

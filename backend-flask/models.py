@@ -1,6 +1,15 @@
 from dataclasses import dataclass
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, func
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    func,
+)
 from sqlalchemy.orm import declarative_base, relationship, sessionmaker
 from sqlalchemy import create_engine
 
@@ -40,6 +49,43 @@ class EmployeeORM(Base):
     CreatedAt = Column(DateTime(timezone=True), nullable=False, server_default=func.sysdatetime())
 
     User = relationship("UserORM", back_populates="Employee")
+    LeaveRequests = relationship("LeaveRequestORM", back_populates="Employee")
+
+
+class LeaveRequestORM(Base):
+    """
+    Maps to the LeaveRequests table in SQL Server.
+
+    Expected SQL table definition (run in SSMS, consistent with Users/Employees):
+
+    CREATE TABLE LeaveRequests (
+        Id INT IDENTITY(1,1) PRIMARY KEY,
+        EmployeeId INT NOT NULL FOREIGN KEY REFERENCES Employees(Id),
+        StartDate DATE NOT NULL,
+        EndDate DATE NOT NULL,
+        Type NVARCHAR(50) NOT NULL,
+        Status NVARCHAR(20) NOT NULL DEFAULT 'Pending',
+        Reason NVARCHAR(500) NULL,
+        CreatedAt DATETIME2 NOT NULL DEFAULT SYSDATETIME()
+    );
+    """
+
+    __tablename__ = "LeaveRequests"
+
+    Id = Column(Integer, primary_key=True, index=True)
+    EmployeeId = Column(Integer, ForeignKey("Employees.Id"), nullable=False, index=True)
+    StartDate = Column(Date, nullable=False)
+    EndDate = Column(Date, nullable=False)
+    Type = Column(String(50), nullable=False)
+    Status = Column(String(20), nullable=False, default="Pending")
+    Reason = Column(String(500), nullable=True)
+    CreatedAt = Column(
+        DateTime(timezone=False),
+        nullable=False,
+        server_default=func.sysdatetime(),
+    )
+
+    Employee = relationship("EmployeeORM", back_populates="LeaveRequests")
 
 
 @dataclass
@@ -56,3 +102,13 @@ class EmployeeProfile:
     email: str
     phone: str | None
     department: str | None
+
+
+@dataclass
+class LeaveRequest:
+    id: int
+    start_date: str
+    end_date: str
+    type: str
+    status: str
+    reason: str | None
