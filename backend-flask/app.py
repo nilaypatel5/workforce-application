@@ -288,6 +288,65 @@ def create_leave(username):
         return jsonify(response), 201
 
 
+@app.route("/ess/leaves/<int:leave_id>/cancel", methods=["PUT"])
+@token_required
+def cancel_leave(username, leave_id: int):
+    username = (username or "").strip().lower()
+
+    with SessionLocal() as session:
+        user = (
+            session.query(UserORM)
+            .filter(UserORM.Username.ilike(username))
+            .one_or_none()
+        )
+        if user is None:
+            return jsonify({"detail": "User not found"}), 404
+
+        employee = (
+            session.query(EmployeeORM)
+            .filter(EmployeeORM.UserId == user.Id)
+            .one_or_none()
+        )
+        if employee is None:
+            return jsonify({"detail": "Employee profile not found"}), 404
+
+        leave = (
+            session.query(LeaveRequestORM)
+            .filter(
+                LeaveRequestORM.Id == leave_id,
+                LeaveRequestORM.EmployeeId == employee.Id,
+            )
+            .one_or_none()
+        )
+        if leave is None:
+            return jsonify({"detail": "Leave request not found"}), 404
+
+        if (leave.Status or "").strip().lower() != "pending":
+            return (
+                jsonify(
+                    {
+                        "detail": "Only Pending leave requests can be cancelled",
+                    }
+                ),
+                400,
+            )
+
+        leave.Status = "Cancelled"
+        session.commit()
+        session.refresh(leave)
+
+        response = {
+            "id": leave.Id,
+            "startDate": leave.StartDate.isoformat() if leave.StartDate else "",
+            "endDate": leave.EndDate.isoformat() if leave.EndDate else "",
+            "type": leave.Type,
+            "status": leave.Status,
+            "reason": leave.Reason,
+        }
+
+        return jsonify(response), 200
+
+
 if __name__ == "__main__":
     port = int(os.getenv("PORT", "5000"))
     debug = os.getenv("FLASK_DEBUG", "1") == "1"

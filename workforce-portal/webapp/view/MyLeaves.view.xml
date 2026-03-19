@@ -46,6 +46,9 @@
             <Column demandPopin="true" minScreenWidth="Tablet">
               <Text text="Reason" />
             </Column>
+            <Column demandPopin="true" minScreenWidth="Tablet" hAlign="End">
+              <Text text="Action" />
+            </Column>
           </columns>
 
           <items>
@@ -63,6 +66,14 @@
                 <Text
                   text="{= ${leavesModel>reason} || '—' }"
                   maxLines="2" />
+                <Button
+                  text="Cancel"
+                  type="Reject"
+                  visible="{
+                    path: 'leavesModel>status',
+                    formatter: '.isPendingStatus'
+                  }"
+                  press="onCancelLeaveButtonPress" />
               </cells>
             </ColumnListItem>
           </items>

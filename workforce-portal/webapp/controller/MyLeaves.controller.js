@@ -52,7 +52,14 @@ sap.ui.define(
         if (sUpper === "REJECTED") {
           return "Error";
         }
+        if (sUpper === "CANCELLED" || sUpper === "CANCELED") {
+          return "Information";
+        }
         return "None";
+      },
+
+      isPendingStatus: function (sStatus) {
+        return (sStatus || "").trim().toLowerCase() === "pending";
       },
 
       onRefreshButtonPress: function () {
@@ -118,10 +125,12 @@ sap.ui.define(
         });
 
         const oTypeSelect = new Select({ width: "100%" });
+        oTypeSelect.addItem(new Item({ text: "Select type", key: "" }));
         oTypeSelect.addItem(new Item({ text: "Annual Leave", key: "Annual" }));
         oTypeSelect.addItem(new Item({ text: "Sick Leave", key: "Sick" }));
         oTypeSelect.addItem(new Item({ text: "Casual Leave", key: "Casual" }));
         oTypeSelect.addItem(new Item({ text: "Unpaid Leave", key: "Unpaid" }));
+        oTypeSelect.setSelectedKey("");
 
         const oReason = new TextArea({
           width: "100%",
@@ -195,8 +204,20 @@ sap.ui.define(
         const sTypeKey = oTypeSelect.getSelectedKey();
         const sReason = oReasonField.getValue();
 
-        if (!oStartDate || !oEndDate || !sTypeKey) {
-          MessageBox.error("Please fill Start Date, End Date and Leave Type.");
+        if (!oStartDate) {
+          MessageBox.error("Start Date is required.");
+          return;
+        }
+        if (!oEndDate) {
+          MessageBox.error("End Date is required.");
+          return;
+        }
+        if (!sTypeKey) {
+          MessageBox.error("Leave Type is required.");
+          return;
+        }
+        if (oEndDate < oStartDate) {
+          MessageBox.error("End Date cannot be before Start Date.");
           return;
         }
 
@@ -240,6 +261,71 @@ sap.ui.define(
           }
 
           MessageToast.show("Leave request created.");
+          this.loadLeaves();
+        } catch (e) {
+          MessageBox.error(
+            "Cannot reach backend service. Please check if the Flask server is running.",
+          );
+        }
+      },
+
+      onCancelLeaveButtonPress: function (oEvent) {
+        const oSource = oEvent.getSource();
+        const oCtx = oSource.getBindingContext("leavesModel");
+        const oRow = oCtx && oCtx.getObject();
+        const nId = oRow && oRow.id;
+
+        if (!nId) {
+          MessageBox.error("Could not determine leave request ID.");
+          return;
+        }
+
+        if (!this.isPendingStatus(oRow.status)) {
+          MessageBox.error("Only Pending leave requests can be cancelled.");
+          return;
+        }
+
+        const that = this;
+        MessageBox.confirm("Cancel this leave request?", {
+          actions: [MessageBox.Action.OK, MessageBox.Action.CANCEL],
+          emphasizedAction: MessageBox.Action.OK,
+          onClose: async function (sAction) {
+            if (sAction !== MessageBox.Action.OK) {
+              return;
+            }
+            await that._cancelLeaveRequest(nId);
+          },
+        });
+      },
+
+      _cancelLeaveRequest: async function (nId) {
+        const token = this.ensureAuthenticated();
+        if (!token) {
+          return;
+        }
+
+        try {
+          const res = await fetch("/api/ess/leaves/" + nId + "/cancel", {
+            method: "PUT",
+            headers: {
+              Authorization: "Bearer " + token,
+              "Content-Type": "application/json",
+            },
+          });
+
+          const data = await res.json().catch(function () {
+            return null;
+          });
+
+          if (!res.ok) {
+            const sMessage =
+              (data && (data.detail || data.message)) ||
+              "Could not cancel leave request.";
+            MessageBox.error(sMessage);
+            return;
+          }
+
+          MessageToast.show("Leave request cancelled.");
           this.loadLeaves();
         } catch (e) {
           MessageBox.error(
