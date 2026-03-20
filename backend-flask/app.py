@@ -185,6 +185,7 @@ def my_leaves(username):
                     type=row.Type,
                     status=row.Status,
                     reason=row.Reason,
+                    created_at=row.CreatedAt.isoformat() if row.CreatedAt else None,
                 )
             )
 
@@ -197,6 +198,7 @@ def my_leaves(username):
                     "type": leave.type,
                     "status": leave.status,
                     "reason": leave.reason,
+                    "createdAt": leave.created_at,
                 }
                 for leave in leaves
             ]
@@ -283,6 +285,7 @@ def create_leave(username):
             "type": new_leave.Type,
             "status": new_leave.Status,
             "reason": new_leave.Reason,
+            "createdAt": new_leave.CreatedAt.isoformat() if new_leave.CreatedAt else None,
         }
 
         return jsonify(response), 201
@@ -342,6 +345,7 @@ def cancel_leave(username, leave_id: int):
             "type": leave.Type,
             "status": leave.Status,
             "reason": leave.Reason,
+            "createdAt": leave.CreatedAt.isoformat() if leave.CreatedAt else None,
         }
 
         return jsonify(response), 200

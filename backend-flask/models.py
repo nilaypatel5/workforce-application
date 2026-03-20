@@ -112,3 +112,4 @@ class LeaveRequest:
     type: str
     status: str
     reason: str | None
+    created_at: str | None

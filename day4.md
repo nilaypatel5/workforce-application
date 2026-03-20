@@ -1,6 +1,6 @@
 # Day 4 — Polish ESS (Cancel + Validation)
 
-**Date:** 18-03-2026
+**Date:** 19-03-2026
 
 ## Goal
 
@@ -58,8 +58,8 @@ File: `webapp/controller/MyLeaves.controller.js`
 - Added `onCancelLeaveButtonPress(event)`:
   - Reads the selected row context and leave `id`.
   - Shows a confirm dialog.
-  - Calls `_cancelLeaveRequest(id)` on confirmation.
-- Added `_cancelLeaveRequest(id)`:
+  - Calls `cancelLeaveRequest(id)` on confirmation.
+- Added `cancelLeaveRequest(id)`:
   - Calls `PUT /api/ess/leaves/{id}/cancel`
   - Refreshes the table on success.
 

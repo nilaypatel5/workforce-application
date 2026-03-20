@@ -1,7 +1,9 @@
 <mvc:View
   controllerName="my.app.controller.MyLeaves"
   xmlns:mvc="sap.ui.core.mvc"
-  xmlns="sap.m">
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core"
+  xmlns:unified="sap.ui.unified">
 
   <Page title="My Leaves" class="sapUiContentPadding">
     <headerContent>
@@ -14,6 +16,75 @@
 
     <content>
       <VBox class="sapUiSmallMarginTop">
+        <!-- Filter / Sort -->
+        <Panel
+          headerText="Filters"
+          expanded="true"
+          class="sapUiSmallMarginBottom">
+          <content>
+            <VBox>
+              <Toolbar>
+                <Label text="Status" labelFor="idFilterStatusSelect" />
+                <Select
+                  id="idFilterStatusSelect"
+                  width="12rem"
+                  selectedKey="All">
+                  <items>
+                    <core:Item key="All" text="All" />
+                    <core:Item key="Pending" text="Pending" />
+                    <core:Item key="Approved" text="Approved" />
+                    <core:Item key="Rejected" text="Rejected" />
+                    <core:Item key="Cancelled" text="Cancelled" />
+                  </items>
+                </Select>
+                <ToolbarSpacer />
+                <Label text="Type" labelFor="idFilterTypeSelect" />
+                <Select
+                  id="idFilterTypeSelect"
+                  width="12rem"
+                  selectedKey="All">
+                  <items>
+                    <core:Item key="All" text="All" />
+                    <core:Item key="Annual" text="Annual" />
+                    <core:Item key="Sick" text="Sick" />
+                    <core:Item key="Casual" text="Casual" />
+                    <core:Item key="Unpaid" text="Unpaid" />
+                  </items>
+                </Select>
+              </Toolbar>
+
+              <Toolbar>
+                <Label text="From" labelFor="idFilterFromDatePicker" />
+                <DatePicker id="idFilterFromDatePicker" />
+                <Label text="To" labelFor="idFilterToDatePicker" />
+                <DatePicker id="idFilterToDatePicker" />
+                <ToolbarSpacer />
+                <Label text="Sort" labelFor="idSortSelect" />
+                <Select id="idSortSelect" width="16rem" selectedKey="startDesc">
+                  <items>
+                    <core:Item key="startDesc" text="Start Date (Newest)" />
+                    <core:Item key="startAsc" text="Start Date (Oldest)" />
+                    <core:Item key="createdDesc" text="Created At (Newest)" />
+                  </items>
+                </Select>
+              </Toolbar>
+
+              <Toolbar>
+                <Button
+                  text="Apply"
+                  icon="sap-icon://accept"
+                  type="Emphasized"
+                  press="onApplyButtonPress" />
+                <Button
+                  text="Clear"
+                  icon="sap-icon://decline"
+                  press="onClearButtonPress" />
+                <ToolbarSpacer />
+              </Toolbar>
+            </VBox>
+          </content>
+        </Panel>
+
         <Table
           id="idItemsLeavesTable"
           items="{
@@ -52,7 +123,9 @@
           </columns>
 
           <items>
-            <ColumnListItem>
+            <ColumnListItem
+              type="Active"
+              press="onColumnListItemPress">
               <cells>
                 <Text text="{leavesModel>startDate}" />
                 <Text text="{leavesModel>endDate}" />
@@ -73,13 +146,48 @@
                     path: 'leavesModel>status',
                     formatter: '.isPendingStatus'
                   }"
-                  press="onCancelLeaveButtonPress" />
+                  press="onCancelButtonPress" />
               </cells>
             </ColumnListItem>
           </items>
         </Table>
       </VBox>
+
+      <!-- Calendar view (Fiori compliant) -->
+      <Panel headerText="Calendar View" class="sapUiSmallMarginTop">
+        <content>
+          <PlanningCalendar
+            id="idPlanningCalendar"
+            rows="{leavesModel>/calendarRows}"
+            appointmentsVisualization="Filled"
+            appointmentSelect="onAppointmentSelect">
+
+            <rows>
+              <PlanningCalendarRow
+                title="My Leaves"
+                appointments="{
+                  path: 'leavesModel>appointments',
+                  templateShareable: false
+                }">
+                
+                <appointments>
+                  <unified:CalendarAppointment
+                    startDate="{leavesModel>startDateObj}"
+                    endDate="{leavesModel>endDateObj}"
+                    title="{leavesModel>type}"
+                    text="{leavesModel>status}"
+                    type="{
+                      path: 'leavesModel>status',
+                      formatter: '.formatAppointmentType'
+                    }"/>
+                </appointments>
+
+              </PlanningCalendarRow>
+            </rows>
+
+          </PlanningCalendar>
+        </content>
+      </Panel>
     </content>
   </Page>
 </mvc:View>
-

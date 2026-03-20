@@ -12,6 +12,7 @@ sap.ui.define(
     "sap/m/TextArea",
     "sap/m/Button",
     "sap/m/VBox",
+    "sap/ui/layout/form/SimpleForm",
   ],
   function (
     Controller,
@@ -26,6 +27,7 @@ sap.ui.define(
     TextArea,
     Button,
     VBox,
+    SimpleForm,
   ) {
     "use strict";
 
@@ -33,6 +35,8 @@ sap.ui.define(
       onInit: function () {
         const oModel = new JSONModel({
           items: [],
+          calendarItems: [],
+          calendarRows: [],
         });
         this.getView().setModel(oModel, "leavesModel");
         this.loadLeaves();
@@ -58,12 +62,146 @@ sap.ui.define(
         return "None";
       },
 
+      formatAppointmentType: function (sStatus) {
+        const s = (sStatus || "").toLowerCase();
+        if (s === "approved") return "Type01";
+        if (s === "pending") return "Type02";
+        if (s === "rejected") return "Type03";
+        if (s === "cancelled") return "Type04";
+        return "None";
+      },
+
+      formatDateTime: function (sDateTime) {
+        if (!sDateTime) return "—";
+        const oDate = new Date(sDateTime);
+        if (isNaN(oDate)) return sDateTime;
+        return oDate.toLocaleString();
+      },
+
       isPendingStatus: function (sStatus) {
         return (sStatus || "").trim().toLowerCase() === "pending";
       },
 
       onRefreshButtonPress: function () {
         this.loadLeaves();
+      },
+
+      parseLocalIsoDate: function (sIso) {
+        if (!sIso || typeof sIso !== "string") {
+          return null;
+        }
+        const parts = sIso.split("-");
+        if (parts.length !== 3) {
+          return null;
+        }
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        const d = parseInt(parts[2], 10);
+        if (!y || !m || !d) {
+          return null;
+        }
+        return new Date(y, m - 1, d);
+      },
+
+      normalizeKeyOrEmpty: function (sKey) {
+        return (sKey || "").trim().toLowerCase() === "all" ? "" : sKey;
+      },
+
+      applyFiltersAndSort: function () {
+        const oView = this.getView();
+
+        const oStatusSelect = oView.byId("idFilterStatusSelect");
+        const oTypeSelect = oView.byId("idFilterTypeSelect");
+        const oFromDate = oView.byId("idFilterFromDatePicker");
+        const oToDate = oView.byId("idFilterToDatePicker");
+        const oSortSelect = oView.byId("idSortSelect");
+
+        const statusKey = this.normalizeKeyOrEmpty(oStatusSelect.getSelectedKey());
+        const typeKey = this.normalizeKeyOrEmpty(oTypeSelect.getSelectedKey());
+        const sortBy = oSortSelect.getSelectedKey() || "startDesc";
+
+        const dFrom = oFromDate.getDateValue();
+        const dTo = oToDate.getDateValue();
+
+        const filtered = (this.allLeaves || []).filter((oLeave) => {
+          const dStart = this.parseLocalIsoDate(oLeave.startDate);
+          const dEnd = this.parseLocalIsoDate(oLeave.endDate);
+
+          if (!dStart || !dEnd) {
+            return true;
+          }
+
+          if (statusKey) {
+            if ((oLeave.status || "").trim().toLowerCase() !== statusKey.toLowerCase()) {
+              return false;
+            }
+          }
+
+          if (typeKey) {
+            if ((oLeave.type || "").trim().toLowerCase() !== typeKey.toLowerCase()) {
+              return false;
+            }
+          }
+
+          if (dFrom) {
+            if (dEnd < dFrom) {
+              return false;
+            }
+          }
+
+          if (dTo) {
+            if (dStart > dTo) {
+              return false;
+            }
+          }
+
+          return true;
+        });
+
+        const toDateTime = function (sIso) {
+          if (!sIso) return null;
+          const d = new Date(sIso);
+          return Number.isNaN(d.getTime()) ? null : d;
+        };
+
+        const sorted = filtered.sort((a, b) => {
+          if (sortBy === "startAsc") {
+            const da = this.parseLocalIsoDate(a.startDate);
+            const db = this.parseLocalIsoDate(b.startDate);
+            return (da && db ? da - db : 0) || 0;
+          }
+
+          if (sortBy === "createdDesc") {
+            const da = toDateTime(a.createdAt);
+            const db = toDateTime(b.createdAt);
+            return (da && db ? db - da : 0) || 0;
+          }
+
+          const da = this.parseLocalIsoDate(a.startDate);
+          const db = this.parseLocalIsoDate(b.startDate);
+          return (da && db ? db - da : 0) || 0;
+        });
+
+        const oModel = oView.getModel("leavesModel");
+        oModel.setProperty("/items", sorted);
+      },
+
+      updateCalendar: function () {
+        const oModel = this.getView().getModel("leavesModel");
+
+        const appointments = (this.allLeaves || []).map((oLeave) => {
+          return {
+            ...oLeave,
+            startDateObj: this.parseLocalIsoDate(oLeave.startDate),
+            endDateObj: this.parseLocalIsoDate(oLeave.endDate),
+          };
+        });
+
+        oModel.setProperty("/calendarRows", [
+          {
+            appointments: appointments,
+          },
+        ]);
       },
 
       ensureAuthenticated: function () {
@@ -102,8 +240,9 @@ sap.ui.define(
             return;
           }
 
-          const oModel = this.getView().getModel("leavesModel");
-          oModel.setProperty("/items", data);
+          this.allLeaves = data;
+          this.applyFiltersAndSort();
+          this.updateCalendar();
         } catch (e) {
           MessageBox.error(
             "Cannot reach backend service. Please check if the Flask server is running.",
@@ -111,10 +250,47 @@ sap.ui.define(
         }
       },
 
+      onApplyButtonPress: function () {
+        this.applyFiltersAndSort();
+        this.updateCalendar();
+      },
+
+      onClearButtonPress: function () {
+        const oView = this.getView();
+        oView.byId("idFilterStatusSelect").setSelectedKey("All");
+        oView.byId("idFilterTypeSelect").setSelectedKey("All");
+        oView.byId("idFilterFromDatePicker").setDateValue(null);
+        oView.byId("idFilterToDatePicker").setDateValue(null);
+        oView.byId("idSortSelect").setSelectedKey("startDesc");
+
+        this.applyFiltersAndSort();
+        this.updateCalendar();
+      },
+
+      onAppointmentSelect: function (oEvent) {
+        const oAppointment = oEvent.getParameter("appointment");
+        if (!oAppointment) return;
+
+        const oCtx = oAppointment.getBindingContext("leavesModel");
+        const oLeave = oCtx.getObject();
+
+        MessageBox.information(
+          oLeave.type +
+            "\n" +
+            oLeave.startDate +
+            " → " +
+            oLeave.endDate +
+            "\nStatus: " +
+            oLeave.status
+        );
+      },
+
+      onShowButtonPress: function () {},
+
       onRequestLeaveButtonPress: function () {
-        if (this._oDialog) {
-          this._oDialog.destroy();
-          this._oDialog = null;
+        if (this.oDialog) {
+          this.oDialog.destroy();
+          this.oDialog = null;
         }
 
         const oStartDate = new DatePicker({
@@ -138,7 +314,7 @@ sap.ui.define(
           placeholder: "Reason (optional)",
         });
 
-        const oContent = new sap.ui.layout.form.SimpleForm({
+        const oContent = new SimpleForm({
           editable: true,
           layout: "ResponsiveGridLayout",
           columnsL: 2,
@@ -161,7 +337,7 @@ sap.ui.define(
 
         const that = this;
 
-        this._oDialog = new Dialog({
+        this.oDialog = new Dialog({
           title: "Request Leave",
           contentWidth: "50rem",
           contentHeight: "auto",
@@ -181,18 +357,19 @@ sap.ui.define(
           endButton: new Button({
             text: "Cancel",
             press: function () {
-              that._oDialog.close();
+              that.oDialog.close();
             },
           }),
           afterClose: function () {
-            that._oDialog.destroy();
-            that._oDialog = null;
+            that.oDialog.destroy();
+            that.oDialog = null;
           },
         });
 
-        this.getView().addDependent(this._oDialog);
-        this._oDialog.open();
+        this.getView().addDependent(this.oDialog);
+        this.oDialog.open();
       },
+
       submitLeaveRequest: async function (mControls) {
         const oStartDatePicker = mControls.startDatePicker;
         const oEndDatePicker = mControls.endDatePicker;
@@ -256,8 +433,8 @@ sap.ui.define(
             return;
           }
 
-          if (this._oDialog) {
-            this._oDialog.close();
+          if (this.oDialog) {
+            this.oDialog.close();
           }
 
           MessageToast.show("Leave request created.");
@@ -269,7 +446,7 @@ sap.ui.define(
         }
       },
 
-      onCancelLeaveButtonPress: function (oEvent) {
+      onCancelButtonPress: function (oEvent) {
         const oSource = oEvent.getSource();
         const oCtx = oSource.getBindingContext("leavesModel");
         const oRow = oCtx && oCtx.getObject();
@@ -293,12 +470,12 @@ sap.ui.define(
             if (sAction !== MessageBox.Action.OK) {
               return;
             }
-            await that._cancelLeaveRequest(nId);
+            await that.cancelLeaveRequest(nId);
           },
         });
       },
 
-      _cancelLeaveRequest: async function (nId) {
+      cancelLeaveRequest: async function (nId) {
         const token = this.ensureAuthenticated();
         if (!token) {
           return;
@@ -332,6 +509,75 @@ sap.ui.define(
             "Cannot reach backend service. Please check if the Flask server is running.",
           );
         }
+      },
+
+      onColumnListItemPress: function (oEvent) {
+        const that = this;
+        const oSource = oEvent.getSource();
+        const oCtx = oSource.getBindingContext("leavesModel");
+        const oLeave = oCtx && oCtx.getObject();
+
+        if (!oLeave) {
+          MessageBox.error("Could not load leave details.");
+          return;
+        }
+
+        if (this.oDetailsDialog) {
+          this.oDetailsDialog.destroy();
+          this.oDetailsDialog = null;
+        }
+
+        const oContent = new SimpleForm({
+          editable: false,
+          layout: "ResponsiveGridLayout",
+          columnsL: 2,
+          columnsM: 2,
+          content: [
+            new sap.m.Label({ text: "Leave ID" }),
+            new sap.m.Text({ text: String(oLeave.id || "") }),
+
+            new sap.m.Label({ text: "Start Date" }),
+            new sap.m.Text({ text: oLeave.startDate || "" }),
+
+            new sap.m.Label({ text: "End Date" }),
+            new sap.m.Text({ text: oLeave.endDate || "" }),
+
+            new sap.m.Label({ text: "Type" }),
+            new sap.m.Text({ text: oLeave.type || "" }),
+
+            new sap.m.Label({ text: "Status" }),
+            new sap.m.Text({ text: oLeave.status || "" }),
+
+            new sap.m.Label({ text: "Reason" }),
+            new sap.m.Text({ text: oLeave.reason || "—" }),
+
+            new sap.m.Label({ text: "Created At" }),
+            new sap.m.Text({
+              text: this.formatDateTime(oLeave.createdAt),
+            }),
+          ],
+        });
+
+        this.oDetailsDialog = new Dialog({
+          title: "Leave Details",
+          contentWidth: "30rem",
+          content: [oContent],
+          endButton: new Button({
+            text: "Close",
+            press: function () {
+              that.oDetailsDialog && that.oDetailsDialog.close();
+            },
+          }),
+          afterClose: function () {
+            if (that.oDetailsDialog) {
+              that.oDetailsDialog.destroy();
+              that.oDetailsDialog = null;
+            }
+          },
+        });
+
+        this.getView().addDependent(this.oDetailsDialog);
+        this.oDetailsDialog.open();
       },
     });
   },
