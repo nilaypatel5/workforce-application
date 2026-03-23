@@ -13,6 +13,8 @@ sap.ui.define(
     "sap/m/Button",
     "sap/m/VBox",
     "sap/ui/layout/form/SimpleForm",
+    "sap/ui/unified/DateTypeRange",
+    "sap/ui/unified/DateRange",
   ],
   function (
     Controller,
@@ -28,6 +30,8 @@ sap.ui.define(
     Button,
     VBox,
     SimpleForm,
+    DateTypeRange,
+    DateRange,
   ) {
     "use strict";
 
@@ -35,8 +39,8 @@ sap.ui.define(
       onInit: function () {
         const oModel = new JSONModel({
           items: [],
-          calendarItems: [],
-          calendarRows: [],
+          dayLeaves: [],
+          selectedDayLabel: "",
         });
         this.getView().setModel(oModel, "leavesModel");
         this.loadLeaves();
@@ -186,22 +190,76 @@ sap.ui.define(
         oModel.setProperty("/items", sorted);
       },
 
-      updateCalendar: function () {
-        const oModel = this.getView().getModel("leavesModel");
-
-        const appointments = (this.allLeaves || []).map((oLeave) => {
-          return {
-            ...oLeave,
-            startDateObj: this.parseLocalIsoDate(oLeave.startDate),
-            endDateObj: this.parseLocalIsoDate(oLeave.endDate),
-          };
+      _syncMonthCalendar: function () {
+        const oCal = this.byId("idMonthCalendar");
+        if (!oCal) {
+          return;
+        }
+        oCal.removeAllSpecialDates();
+        const leaves = this.allLeaves || [];
+        const that = this;
+        leaves.forEach(function (oLeave) {
+          const s = that.parseLocalIsoDate(oLeave.startDate);
+          const e = that.parseLocalIsoDate(oLeave.endDate);
+          if (!s || !e) {
+            return;
+          }
+          const dr = new DateTypeRange({
+            startDate: s,
+            endDate: e,
+            type: that.formatAppointmentType(oLeave.status),
+          });
+          oCal.addSpecialDate(dr);
         });
+      },
 
-        oModel.setProperty("/calendarRows", [
-          {
-            appointments: appointments,
-          },
-        ]);
+      _setDayLeavesForDate: function (d) {
+        if (!d) {
+          return;
+        }
+        const t = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        const leaves = (this.allLeaves || []).filter(function (oLeave) {
+          const s = this.parseLocalIsoDate(oLeave.startDate);
+          const e = this.parseLocalIsoDate(oLeave.endDate);
+          if (!s || !e) {
+            return false;
+          }
+          const s0 = new Date(s.getFullYear(), s.getMonth(), s.getDate());
+          const e0 = new Date(e.getFullYear(), e.getMonth(), e.getDate());
+          return t >= s0 && t <= e0;
+        }.bind(this));
+        const oModel = this.getView().getModel("leavesModel");
+        oModel.setProperty("/dayLeaves", leaves);
+        oModel.setProperty(
+          "/selectedDayLabel",
+          "Leaves on " +
+            d.toLocaleDateString(undefined, {
+              weekday: "short",
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            }),
+        );
+      },
+
+      onCalendarMonthSelect: function (oEvent) {
+        const oCal = oEvent.getSource();
+        const aDates = oCal.getSelectedDates();
+        let d = null;
+        if (aDates && aDates.length > 0 && aDates[0].getStartDate) {
+          d = aDates[0].getStartDate();
+        }
+        if (!d) {
+          d =
+            oEvent.getParameter("date") || oEvent.getParameter("startDate");
+        }
+        if (d) {
+          this._setDayLeavesForDate(d);
+        }
+      },
+
+      onCalendarMonthStartDateChange: function () {
+        this._syncMonthCalendar();
       },
 
       ensureAuthenticated: function () {
@@ -242,7 +300,14 @@ sap.ui.define(
 
           this.allLeaves = data;
           this.applyFiltersAndSort();
-          this.updateCalendar();
+          this._syncMonthCalendar();
+          const oCal = this.byId("idMonthCalendar");
+          const today = new Date();
+          if (oCal) {
+            oCal.removeAllSelectedDates();
+            oCal.addSelectedDate(new DateRange({ startDate: today }));
+          }
+          this._setDayLeavesForDate(today);
         } catch (e) {
           MessageBox.error(
             "Cannot reach backend service. Please check if the Flask server is running.",
@@ -252,7 +317,7 @@ sap.ui.define(
 
       onApplyButtonPress: function () {
         this.applyFiltersAndSort();
-        this.updateCalendar();
+        this._syncMonthCalendar();
       },
 
       onClearButtonPress: function () {
@@ -264,28 +329,8 @@ sap.ui.define(
         oView.byId("idSortSelect").setSelectedKey("startDesc");
 
         this.applyFiltersAndSort();
-        this.updateCalendar();
+        this._syncMonthCalendar();
       },
-
-      onAppointmentSelect: function (oEvent) {
-        const oAppointment = oEvent.getParameter("appointment");
-        if (!oAppointment) return;
-
-        const oCtx = oAppointment.getBindingContext("leavesModel");
-        const oLeave = oCtx.getObject();
-
-        MessageBox.information(
-          oLeave.type +
-            "\n" +
-            oLeave.startDate +
-            " → " +
-            oLeave.endDate +
-            "\nStatus: " +
-            oLeave.status
-        );
-      },
-
-      onShowButtonPress: function () {},
 
       onRequestLeaveButtonPress: function () {
         if (this.oDialog) {
@@ -554,6 +599,23 @@ sap.ui.define(
             new sap.m.Label({ text: "Created At" }),
             new sap.m.Text({
               text: this.formatDateTime(oLeave.createdAt),
+            }),
+
+            new sap.m.Label({ text: "Manager comment" }),
+            new sap.m.Text({ text: oLeave.managerComment || "—" }),
+
+            new sap.m.Label({ text: "Approved At" }),
+            new sap.m.Text({
+              text: oLeave.approvedAt
+                ? this.formatDateTime(oLeave.approvedAt)
+                : "—",
+            }),
+
+            new sap.m.Label({ text: "Rejected At" }),
+            new sap.m.Text({
+              text: oLeave.rejectedAt
+                ? this.formatDateTime(oLeave.rejectedAt)
+                : "—",
             }),
           ],
         });

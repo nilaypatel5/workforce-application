@@ -1,0 +1,76 @@
+<mvc:View
+  controllerName="my.app.controller.TeamLeaveApprovals"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m">
+
+  <Page title="Team Leave Approvals" class="sapUiContentPadding">
+    <content>
+      <VBox class="sapUiSmallMarginTop">
+        <Table
+          id="idPendingLeavesTable"
+          items="{
+            path: 'pendingModel>/items'
+          }">
+          <headerToolbar>
+            <Toolbar>
+              <Title text="Pending requests" level="H3" />
+              <ToolbarSpacer />
+              <Button
+                text="Refresh"
+                icon="sap-icon://refresh"
+                press="onRefreshButtonPress" />
+            </Toolbar>
+          </headerToolbar>
+
+          <columns>
+            <Column>
+              <Text text="Employee" />
+            </Column>
+            <Column demandPopin="true" minScreenWidth="Tablet">
+              <Text text="Department" />
+            </Column>
+            <Column>
+              <Text text="Start" />
+            </Column>
+            <Column>
+              <Text text="End" />
+            </Column>
+            <Column demandPopin="true" minScreenWidth="Tablet">
+              <Text text="Type" />
+            </Column>
+            <Column demandPopin="true" minScreenWidth="Tablet">
+              <Text text="Reason" />
+            </Column>
+            <Column hAlign="End" width="8rem">
+              <Text text="Actions" />
+            </Column>
+          </columns>
+
+          <items>
+            <ColumnListItem>
+              <cells>
+                <Text text="{pendingModel>employeeName}" />
+                <Text text="{= ${pendingModel>department} || '—' }" />
+                <Text text="{pendingModel>startDate}" />
+                <Text text="{pendingModel>endDate}" />
+                <Text text="{pendingModel>type}" />
+                <Text text="{= ${pendingModel>reason} || '—' }" maxLines="2" />
+                <HBox justifyContent="End">
+                  <Button
+                    text="Approve"
+                    type="Accept"
+                    class="sapUiTinyMarginEnd"
+                    press="onApproveButtonPress" />
+                  <Button
+                    text="Reject"
+                    type="Reject"
+                    press="onRejectButtonPress" />
+                </HBox>
+              </cells>
+            </ColumnListItem>
+          </items>
+        </Table>
+      </VBox>
+    </content>
+  </Page>
+</mvc:View>

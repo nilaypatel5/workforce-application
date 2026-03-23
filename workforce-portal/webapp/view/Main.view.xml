@@ -12,6 +12,12 @@
               <ToolbarSpacer />
               <Button text="My Profile" icon="sap-icon://employee" press="onMyProfileButtonPress" />
               <Button text="My Leaves" icon="sap-icon://calendar" press="onMyLeavesButtonPress" />
+              <Button
+                id="idTeamLeaveApprovalsButton"
+                text="Team Leave Approvals"
+                icon="sap-icon://group"
+                visible="false"
+                press="onTeamLeaveApprovalsButtonPress" />
               <Button text="Refresh" icon="sap-icon://refresh" press="onRefreshButtonPress" />
               <Button text="Logout" type="Reject" icon="sap-icon://log" press="onLogoutButtonPress" />
             </Toolbar>

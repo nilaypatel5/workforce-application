@@ -32,6 +32,7 @@ class UserORM(Base):
     Username = Column(String(50), unique=True, index=True, nullable=False)
     HashedPassword = Column(String(255), nullable=False)
     IsActive = Column(Boolean, nullable=False, default=True)
+    IsManager = Column(Boolean, nullable=False, default=False)
 
     Employee = relationship("EmployeeORM", back_populates="User", uselist=False)
 
@@ -56,18 +57,8 @@ class LeaveRequestORM(Base):
     """
     Maps to the LeaveRequests table in SQL Server.
 
-    Expected SQL table definition (run in SSMS, consistent with Users/Employees):
-
-    CREATE TABLE LeaveRequests (
-        Id INT IDENTITY(1,1) PRIMARY KEY,
-        EmployeeId INT NOT NULL FOREIGN KEY REFERENCES Employees(Id),
-        StartDate DATE NOT NULL,
-        EndDate DATE NOT NULL,
-        Type NVARCHAR(50) NOT NULL,
-        Status NVARCHAR(20) NOT NULL DEFAULT 'Pending',
-        Reason NVARCHAR(500) NULL,
-        CreatedAt DATETIME2 NOT NULL DEFAULT SYSDATETIME()
-    );
+    Optional columns (Day 6 migration): ApprovedByUserId, ApprovedAt, RejectedByUserId,
+    RejectedAt, ManagerComment — see migrations/day6_manager_and_audit.sql.
     """
 
     __tablename__ = "LeaveRequests"
@@ -84,6 +75,11 @@ class LeaveRequestORM(Base):
         nullable=False,
         server_default=func.sysdatetime(),
     )
+    ApprovedByUserId = Column(Integer, ForeignKey("Users.Id"), nullable=True)
+    ApprovedAt = Column(DateTime(timezone=False), nullable=True)
+    RejectedByUserId = Column(Integer, ForeignKey("Users.Id"), nullable=True)
+    RejectedAt = Column(DateTime(timezone=False), nullable=True)
+    ManagerComment = Column(String(500), nullable=True)
 
     Employee = relationship("EmployeeORM", back_populates="LeaveRequests")
 
@@ -103,13 +99,3 @@ class EmployeeProfile:
     phone: str | None
     department: str | None
 
-
-@dataclass
-class LeaveRequest:
-    id: int
-    start_date: str
-    end_date: str
-    type: str
-    status: str
-    reason: str | None
-    created_at: str | None

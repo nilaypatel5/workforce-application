@@ -27,7 +27,8 @@
       "minUI5Version": "1.96.0",
       "libs": {
         "sap.m": {},
-        "sap.ui.layout": {}
+        "sap.ui.layout": {},
+        "sap.ui.unified": {}
       }
     },
     "resources": {
@@ -70,6 +71,11 @@
           "name": "MyLeaves",
           "pattern": "leaves",
           "target": "MyLeaves"
+        },
+        {
+          "name": "TeamLeaveApprovals",
+          "pattern": "team-approvals",
+          "target": "TeamLeaveApprovals"
         }
       ],
       "targets": {
@@ -87,6 +93,10 @@
         },
         "MyLeaves": {
           "viewName": "MyLeaves",
+          "viewLevel": 4
+        },
+        "TeamLeaveApprovals": {
+          "viewName": "TeamLeaveApprovals",
           "viewLevel": 4
         }
       }

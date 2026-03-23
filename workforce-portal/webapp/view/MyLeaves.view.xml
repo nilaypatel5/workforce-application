@@ -153,39 +153,57 @@
         </Table>
       </VBox>
 
-      <!-- Calendar view (Fiori compliant) -->
-      <Panel headerText="Calendar View" class="sapUiSmallMarginTop">
+      <!-- Month grid + selected day -->
+      <Panel headerText="Month calendar" class="sapUiSmallMarginTop">
         <content>
-          <PlanningCalendar
-            id="idPlanningCalendar"
-            rows="{leavesModel>/calendarRows}"
-            appointmentsVisualization="Filled"
-            appointmentSelect="onAppointmentSelect">
-
-            <rows>
-              <PlanningCalendarRow
-                title="My Leaves"
-                appointments="{
-                  path: 'leavesModel>appointments',
-                  templateShareable: false
-                }">
-                
-                <appointments>
-                  <unified:CalendarAppointment
-                    startDate="{leavesModel>startDateObj}"
-                    endDate="{leavesModel>endDateObj}"
-                    title="{leavesModel>type}"
-                    text="{leavesModel>status}"
-                    type="{
-                      path: 'leavesModel>status',
-                      formatter: '.formatAppointmentType'
-                    }"/>
-                </appointments>
-
-              </PlanningCalendarRow>
-            </rows>
-
-          </PlanningCalendar>
+          <VBox>
+            <unified:Calendar
+              id="idMonthCalendar"
+              select="onCalendarMonthSelect"
+              startDateChange="onCalendarMonthStartDateChange" />
+            <Title
+              text="{leavesModel>/selectedDayLabel}"
+              level="H4"
+              class="sapUiSmallMarginTop" />
+            <Table
+              id="idDayLeavesTable"
+              items="{leavesModel>/dayLeaves}"
+              noDataText="No leave on this day.">
+              <columns>
+                <Column>
+                  <Text text="Type" />
+                </Column>
+                <Column>
+                  <Text text="Status" />
+                </Column>
+                <Column demandPopin="true" minScreenWidth="Tablet">
+                  <Text text="Start" />
+                </Column>
+                <Column demandPopin="true" minScreenWidth="Tablet">
+                  <Text text="End" />
+                </Column>
+                <Column demandPopin="true" minScreenWidth="Tablet">
+                  <Text text="Reason" />
+                </Column>
+              </columns>
+              <items>
+                <ColumnListItem>
+                  <cells>
+                    <Text text="{leavesModel>type}" />
+                    <ObjectStatus
+                      text="{leavesModel>status}"
+                      state="{
+                        path: 'leavesModel>status',
+                        formatter: '.formatStatusState'
+                      }" />
+                    <Text text="{leavesModel>startDate}" />
+                    <Text text="{leavesModel>endDate}" />
+                    <Text text="{= ${leavesModel>reason} || '—' }" maxLines="2" />
+                  </cells>
+                </ColumnListItem>
+              </items>
+            </Table>
+          </VBox>
         </content>
       </Panel>
     </content>

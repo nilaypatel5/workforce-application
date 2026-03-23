@@ -41,6 +41,11 @@ sap.ui.define(
           oView
             .byId("idLoggedInAsLoadingUserText")
             .setText("Logged in as: " + data.username);
+
+          const oTeamBtn = oView.byId("idTeamLeaveApprovalsButton");
+          if (oTeamBtn) {
+            oTeamBtn.setVisible(!!data.isManager);
+          }
         } catch (e) {
           MessageBox.error("Service is not reachable. Please try again.");
         }
@@ -52,6 +57,10 @@ sap.ui.define(
 
       onMyLeavesButtonPress: function () {
         this.getOwnerComponent().getRouter().navTo("MyLeaves");
+      },
+
+      onTeamLeaveApprovalsButtonPress: function () {
+        this.getOwnerComponent().getRouter().navTo("TeamLeaveApprovals");
       },
 
       onLogoutButtonPress: function () {
